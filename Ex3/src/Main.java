@@ -4,7 +4,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Main {
+public class Main
+{
     // The signature doesn't match exactly what was specified in the assignment document but I wanted to add some simple metrics,
     // and I additionally wasn't able to think of a way to solve it without passing the modified list back to itself.
     // It especially makes edge cases difficult.
@@ -12,6 +13,7 @@ public class Main {
     // and to pass the accumulated list to any nested calls to tally up any files within sub-directories.
     // as well as to initialize and check edge cases. For instance, if found is empty, we can just create it.
     // Being able to return and pass around and initialize before use is very powerful.
+
     public static List<String> find(List<String> found, AtomicInteger scancount, File path, String filename)
     {
         // base cases
@@ -33,22 +35,24 @@ public class Main {
         // path must be a directory.
         assert path.isDirectory();
 
+        // start actual processing
+
         // because we start from a dir, expand the list of filenames
-        for (String childName : path.list()) {
+        for (String childName : path.list())
+        {
             // construct temporary file to scan file or dir from path
             File child = new File(path, childName);
             scancount.incrementAndGet();
 
-            // if the scanned folder is a directory, enter it
+            // if the scanned file-system entry is a directory, enter it
             // when the scanned folder and any sub-directories are scanned, this will return back to the root
             if(child.isDirectory())
                 find(found, scancount, child, filename);
 
             // catch all non-directories in our subdirectory scan.
-            // if the filenames match, add it to our accumulator list in-place.
-            else if(child.getName().equals(filename)) {
+            // if the filenames match, add it to our accumulator list in-place to be returned or passed to subdir scan
+            else if(child.getName().equals(filename))
                 found.add(child.getAbsolutePath());
-            }
         }
 
         // directory scan is complete, return paths of all found matches
@@ -77,15 +81,16 @@ public class Main {
     //    /home/ashley/barrett/build/_deps/inih-subbuild/CMakeLists.txt
     //    /home/ashley/barrett/CMakeLists.txt
     //    3784 files scanned in 31ms.
-    public static void main(String[] args) {
-        // some fun metrics to print out
 
+    public static void main(String[] args)
+    {
         // kind of nasty workaround because I want to measure how many times the loop runs with a perf counter
         // primitives are passed by value... so I can't just keep daisy-chaining it back into the recursive function
         // as per the docs... "An AtomicInteger is used in applications such as atomically incremented counters",
         // so it is a good fit despite being somewhat nasty... I wish I could just do &scancount with an int.
-        // This gets passed-by-reference and just uses simple getters/setters so is simple and the intended use.
+        // This gets passed-by-reference so doesn't require any returns etc.
         // https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicInteger.html
+
         AtomicInteger scancount = new AtomicInteger(0);
 
         long start = System.nanoTime();
@@ -93,9 +98,11 @@ public class Main {
         // scan for all CMakeLists from dependencies and sub-dependencies in a C project of mine
         // creating the arraylist in place because List<T> is abstract thus can't be used like this, but this works good
         // this prevents null pointer references when dealing with passing the initially-empty buffer to itself to be filled.
+
         List<String> outBuffer = find(new ArrayList<>(0), scancount, new File("/home/ashley/barrett"), "CMakeLists.txt");
 
         // 1 ms = 1 million ns
+
         long elapsed = (System.nanoTime() - start) / 1000000;
 
         for(String prt : outBuffer)
@@ -103,6 +110,7 @@ public class Main {
             System.out.println(prt);
         }
 
+        // some fun metrics to print out
         System.out.printf(scancount.get() + " files scanned in %dms.", elapsed);
     }
 }
